@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from auth.webtoken import tokengen
 import hashlib
 from database.dbconn import db
@@ -25,8 +25,14 @@ def hash_password(password):
 @signup_router.post("/signup")
 async def signup(formdata: SignupData):
     username = formdata.username
-    password = hash_password(formdata.password)
     email = formdata.email
+
+    # Check if user with the same username or email already exists
+    existing_user = db.users.find_one({'$or': [{'username': username}, {'email': email}]})
+    if existing_user:
+        raise HTTPException(status_code=400, detail="User already exists")
+
+    password = hash_password(formdata.password)
     firstName = formdata.firstName
     lastName = formdata.lastName
 
@@ -46,14 +52,8 @@ async def signup(formdata: SignupData):
     token = tokengen(payload)
 
     try:
-        # Insert user_data into the database
         db.users.insert_one(user_data)
-
-        # Convert user_data to a Pydantic model for serialization
-        user_data_model = SignupData(**user_data)
-        
-        # Use jsonable_encoder to ensure correct serialization
-        serialized_user_data = jsonable_encoder(user_data_model)
+        serialized_user_data = jsonable_encoder(user_data)
 
         return {
             'user_data': serialized_user_data,
@@ -61,4 +61,4 @@ async def signup(formdata: SignupData):
             'message': 'SIGNUP COMPLETE'
         }
     except Exception:
-        return {'message': 'SIGNUP ERROR'}
+        raise HTTPException(status_code=500, detail='Internal Server Error')

@@ -1,12 +1,12 @@
 from fastapi import FastAPI
 from auth.signup import signup_router
+from auth.login import login_router
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 
 origins = [
-    "http://localhost:8000",
-    "localhost:8000"
+"*"
 ]
 
 app.add_middleware(
@@ -18,3 +18,4 @@ app.add_middleware(
 )
 
 app.include_router(signup_router, prefix="/api")
+app.include_router(login_router, prefix="/api")

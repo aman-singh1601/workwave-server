@@ -27,32 +27,31 @@ async def signup(formdata: SignupData):
     username = formdata.username
     email = formdata.email
 
-    # Check if user with the same username or email already exists
     existing_user = db.users.find_one({'$or': [{'username': username}, {'email': email}]})
     if existing_user:
         raise HTTPException(status_code=400, detail="User already exists")
-
-    password = hash_password(formdata.password)
-    firstName = formdata.firstName
-    lastName = formdata.lastName
-
-    user_data = {
-        'username': username,
-        'password': password,
-        'email': email,
-        'firstName': firstName,
-        'lastName': lastName
-    }
-
-    payload = {
-        'userName': username,
-        'email': email
-    }
-
-    token = tokengen(payload)
-
     try:
-        db.users.insert_one(user_data)
+        password = hash_password(formdata.password)
+        firstName = formdata.firstName
+        lastName = formdata.lastName
+
+        user_data = {
+            'username': username,
+            'password': password,
+            'email': email,
+            'firstName': firstName,
+            'lastName': lastName
+        }
+
+        payload = {
+            'userName': username,
+            'email': email
+        }
+
+        token = tokengen(payload)
+
+        inserted_id = db.users.insert_one(user_data).inserted_id
+        user_data['_id'] = str(inserted_id)
         serialized_user_data = jsonable_encoder(user_data)
 
         return {
@@ -60,5 +59,5 @@ async def signup(formdata: SignupData):
             'token': token,
             'message': 'SIGNUP COMPLETE'
         }
-    except Exception:
-        raise HTTPException(status_code=500, detail='Internal Server Error')
+    except:
+        raise HTTPException(status_code=500, detail="Internal Server Error")

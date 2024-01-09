@@ -28,12 +28,10 @@ async def login(formdata: LoginData):
     if not user_data:
         raise HTTPException(status_code=401, detail="User does not exist")
 
-    # Verify password
     hashed_password = hash_password(password)
     if hashed_password != user_data['password']:
         raise HTTPException(status_code=401, detail="Invalid password")
 
-    # Generate token
     payload = {
         'userName': username,
         'email': user_data['email']
